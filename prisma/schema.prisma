@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:rootadmin@localhost:5432/booking?schema=public"
+}
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  fullName  String? @db.VarChar(100)
+  email String  @unique
+  password String
+  role    Role     @default(USER)
+  createAt DateTime @default(now())
+  updatedAT DateTime @updatedAt
+  bookings Booking[]
+  boats Boat[]
+  profile Profile? @relation("Profile")
+  @@index([fullName, email])
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  bio    String
+  user   User   @relation("Profile",fields: [userId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+  userId Int    @unique //one to one relationship
+
+}
+
+model Booking {
+  id        Int     @id @default(autoincrement())
+  destination     String
+  content   String?
+  booked   Boolean @default(false)
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int //one to many relationship
+  createAt DateTime @default(now())
+  updatedAT DateTime @updatedAt
+}
+
+model Boat {
+  id         Int        @id @default(autoincrement())
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  title      String
+  published  Boolean    @default(false)
+  user     User       @relation(fields: [userId], references: [id])
+  userId   Int
+  categories Category[]
+  boatCats CategoriesOnPosts[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  boats Boat[]
+  boatCats CategoriesOnPosts[]
+}
+
+model CategoriesOnPosts {
+  boat       Boat     @relation(fields: [boatId], references: [id])
+  boatId     Int // relation scalar field (used in the `@relation` attribute above)
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int // relation scalar field (used in the `@relation` attribute above)
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  @@id([boatId, categoryId])
+}
